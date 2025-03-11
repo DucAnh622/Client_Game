@@ -1,0 +1,9 @@
+.user-detail {
+    padding: 8px;
+    img {
+        border: 2px solid #ccc;
+        border-radius: 50%;
+        aspect-ratio: 4/4;
+        object-fit: cover;
+    }
+}

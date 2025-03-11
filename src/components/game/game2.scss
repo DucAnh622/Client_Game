@@ -1,0 +1,40 @@
+.board-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+  }
+  
+  button {
+    font-size: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  
+    &:hover {
+      opacity: 0.8;
+    }
+  
+    &.btn-outline-primary {
+      border-color: #007bff;
+    }
+  
+    &.btn-primary {
+      background-color: #007bff;
+      color: white;
+    }
+  
+    &.btn-danger {
+      background-color: #dc3545;
+      color: white;
+    }
+  
+    &.btn-outline-primary,
+    &.btn-primary,
+    &.btn-danger {
+      width: 50px;
+      height: 50px;
+    }
+  }
+  

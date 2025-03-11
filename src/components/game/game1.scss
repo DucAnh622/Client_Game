@@ -1,0 +1,14 @@
+.game1 {
+   height: calc(100vh - 50px);
+    .grid {
+       display: inline-block;
+    }
+      
+    .cell {
+       transition: background-color 0.3s;
+    }
+      
+    .selected {
+       border: 2px solid black !important;
+    }
+}
