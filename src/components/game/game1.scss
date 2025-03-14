@@ -5,10 +5,23 @@
     }
       
     .cell {
-       transition: background-color 0.3s;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer; 
+      transition: background-color 0.3s;
+      &:hover {
+         border:2px solid #c32ce2 !important;
+      }
     }
       
     .selected {
-       border: 2px solid black !important;
+       border: 2px solid #c32ce2 !important;
     }
+    
+   .hint {
+      border:2px solid rgba(0, 162, 255) !important;  
+   }
+  
 }

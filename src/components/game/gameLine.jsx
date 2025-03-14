@@ -13,7 +13,9 @@ const Line = () => {
     const [ballSizes, setBallSizes] = useState(
         Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(40))
     );
-    
+    const [hintCells, setHintCells] = useState([]);
+    const [isHintMode, setIsHintMode] = useState(false);
+
     useEffect(() => {
         addNewBalls(grid, true);
     }, []);
@@ -57,49 +59,125 @@ const Line = () => {
                 addNewBalls(newGrid);
                 growBalls();
                 checkLines(newGrid);
+                setHintCells([]); 
             } else {
                 setSelectedBall(null);
+                setHintCells([]); 
             }
-        } else if (grid[row][col]) {
+        } else if (grid[row][col] && ballSizes[row][col] === 40) {
             setSelectedBall({ row, col });
+            if (isHintMode) {
+                setHintCells(getValidMoves(row, col));
+            }
+        } else if (isHintMode && hintCells.some(hint => hint.row === row && hint.col === col)) {
+            setHintCells([]);
+            setSelectedBall(null);
+            handleCellClick(row, col); 
         }
     };
+
+    const getValidMoves = (row, col) => {
+        const directions = [
+            [-1, 0], [1, 0], [0, -1], [0, 1], 
+            [-1, -1], [-1, 1], [1, -1], [1, 1] 
+        ];
+        
+        const queue = [{ row, col }];
+        const visited = new Set();
+        const validMoves = [];
+    
+        while (queue.length > 0) {
+            const { row: r, col: c } = queue.shift();
+            
+            for (const [dr, dc] of directions) {
+                const nr = r + dr, nc = c + dc;
+    
+                if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+                    if (!grid[nr][nc] && !visited.has(`${nr}-${nc}`)) {
+                        queue.push({ row: nr, col: nc });
+                        validMoves.push({ row: nr, col: nc });
+                        visited.add(`${nr}-${nc}`);
+                    }
+                }
+            }
+        }
+    
+        return validMoves;
+    };
+    
 
     const checkLines = (currentGrid) => {
         let newGrid = currentGrid.map(row => [...row]);
         let linesFound = false;
+
         for (let i = 0; i < GRID_SIZE; i++) {
-            let count = 1;
+            let countH = 1;
+            let countV = 1;
             for (let j = 1; j < GRID_SIZE; j++) {
                 if (newGrid[i][j] && newGrid[i][j] === newGrid[i][j - 1]) {
-                    count++;
-                    if (count >= 5) {
+                    countH++;
+                    if (countH >= 5) {
                         linesFound = true;
-                        for (let k = 0; k < count; k++) {
+                        for (let k = 0; k < countH; k++) {
                             newGrid[i][j - k] = null;
                         }
-                        setScore(prev => prev + count * 10);
+                        setScore(prev => prev + countH * 10);
                     }
                 } else {
-                    count = 1;
+                    countH = 1;
+                }
+
+                if (newGrid[j][i] && newGrid[j][i] === newGrid[j - 1][i]) {
+                    countV++;
+                    if (countV >= 5) {
+                        linesFound = true;
+                        for (let k = 0; k < countV; k++) {
+                            newGrid[j - k][i] = null;
+                        }
+                        setScore(prev => prev + countV * 10);
+                    }
+                } else {
+                    countV = 1;
                 }
             }
         }
 
-        for (let j = 0; j < GRID_SIZE; j++) {
-            let count = 1;
-            for (let i = 1; i < GRID_SIZE; i++) {
-                if (newGrid[i][j] && newGrid[i][j] === newGrid[i - 1][j]) {
-                    count++;
-                    if (count >= 5) {
-                        linesFound = true;
-                        for (let k = 0; k < count; k++) {
-                            newGrid[i - k][j] = null;
+        for (let i = 0; i < GRID_SIZE - 4; i++) {
+            for (let j = 0; j < GRID_SIZE - 4; j++) {
+                let count = 1;
+                for (let k = 1; k < GRID_SIZE && i + k < GRID_SIZE && j + k < GRID_SIZE; k++) {
+                    if (newGrid[i + k][j + k] && newGrid[i + k][j + k] === newGrid[i + k - 1][j + k - 1]) {
+                        count++;
+                        if (count >= 5) {
+                            linesFound = true;
+                            for (let l = 0; l < count; l++) {
+                                newGrid[i + k - l][j + k - l] = null;
+                            }
+                            setScore(prev => prev + count * 10);
                         }
-                        setScore(prev => prev + count * 10);
+                    } else {
+                        break;
                     }
-                } else {
-                    count = 1;
+                }
+            }
+        }
+
+        for (let i = 0; i < GRID_SIZE - 4; i++) {
+            for (let j = GRID_SIZE - 1; j >= 4; j--) {
+                let count = 1;
+                for (let k = 1; k < GRID_SIZE && i + k < GRID_SIZE && j - k >= 0; k++) {
+                    if (newGrid[i + k][j - k] && newGrid[i + k][j - k] === newGrid[i + k - 1][j - k + 1]) {
+                        count++;
+                        if (count >= 5) {
+                            linesFound = true;
+                            for (let l = 0; l < count; l++) {
+                                newGrid[i + k - l][j - k + l] = null;
+                            }
+                            setScore(prev => prev + count * 10);
+                        }
+                    } else {
+                        break;
+                    }
                 }
             }
         }
@@ -110,10 +188,30 @@ const Line = () => {
         }
     };
 
+    const toggleHintMode = () => {
+        setIsHintMode(prevMode => {
+            const newMode = !prevMode;
+            if (newMode) {
+                if (selectedBall) {
+                    setHintCells(getValidMoves(selectedBall.row, selectedBall.col));
+                }
+            } else {
+                setHintCells([]);
+            }
+    
+            return newMode;
+        });
+    };
+    
     return (
         <div className="container game1 mt-2 text-center">
-            <h1>Line 98</h1>
-            <h3>Score: {score}</h3>
+            <div className="d-flex align-item-center justify-content-between">
+                <h3 style={{minWidth:"180px"}}>Score: {score}</h3>
+                <h1>Line 98</h1>
+                <button onClick={toggleHintMode} className={isHintMode ? 'btn btn-secondary mb-2':'btn btn-primary mb-2'}>
+                    {isHintMode ? 'Disable hint mode' : 'Enable hint mode'}
+                </button>
+            </div>
             <div className="d-flex justify-content-center">
                 <div className="grid">
                     {grid.map((row, rowIndex) => (
@@ -121,11 +219,12 @@ const Line = () => {
                             {row.map((cell, colIndex) => (
                                 <div
                                     key={colIndex}
-                                    className={`cell ${selectedBall?.row === rowIndex && selectedBall?.col === colIndex ? 'selected' : ''}`}
+                                    className={`cell ${selectedBall?.row === rowIndex && selectedBall?.col === colIndex ? 'selected' : ''} 
+                                    ${hintCells.some(hint => hint.row === rowIndex && hint.col === colIndex) ? 'hint' : ''}`}
                                     style={{
                                         width: '50px',
                                         height: '50px',
-                                        border: '1px solid black',
+                                        border: '1px solid #ccc',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
@@ -156,6 +255,3 @@ const Line = () => {
 }
 
 export default Line;
-
-
-
